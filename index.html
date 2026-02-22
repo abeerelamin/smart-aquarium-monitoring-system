@@ -1,0 +1,214 @@
+<!-- Smart Aquarium Monitoring Dashboard -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Aquarium Dashboard</title>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+            background-color: #f4f6f8;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        #sensor-container {
+            font-size: 1.2em;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .sensor-reading {
+            margin: 10px 0;
+        }
+
+        #alert-container {
+            color: red;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        canvas {
+            max-width: 900px;
+            margin: 20px auto;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Smart Aquarium Monitoring System</h1>
+
+    <div id="sensor-container">
+        <div class="sensor-reading">
+            Temperature: <span id="temperature-reading">Loading...</span> °C
+        </div>
+
+        <div class="sensor-reading">
+            Water Level: <span id="water-level-reading">Loading...</span>
+        </div>
+
+        <div class="sensor-reading">
+            Turbidity: <span id="turbidity-reading">Loading...</span>
+        </div>
+
+        <div class="sensor-reading">
+            pH: <span id="ph-reading">Loading...</span>
+        </div>
+    </div>
+
+    <div id="alert-container">No alerts</div>
+
+    <h2>Sensor Data History</h2>
+    <canvas id="sensorChart"></canvas>
+
+    <button onclick="downloadCSV()">Download Data as CSV</button>
+
+    <script>
+        let sensorData = {
+            temperature: null,
+            waterLevel: null,
+            turbidity: null,
+            pH: null
+        };
+
+        let sensorIndex = 0;
+        const sensorLabels = ["temperature", "waterLevel", "turbidity", "pH"];
+
+        async function fetchData() {
+            try {
+                const response = await fetch("/data");
+                const data = await response.json();
+
+                if (data.sensor_reading && data.sensor_reading !== "No data available") {
+                    const currentValue = data.sensor_reading;
+                    const currentSensorType = sensorLabels[sensorIndex];
+
+                    sensorData[currentSensorType] = currentValue;
+
+                    document.getElementById(
+                        `${currentSensorType}-reading`
+                    ).innerText = currentValue || "N/A";
+
+                    sensorIndex = (sensorIndex + 1) % sensorLabels.length;
+                }
+
+                if (data.alerts && data.alerts.length > 0) {
+                    document.getElementById("alert-container").innerHTML =
+                        data.alerts.join("<br>");
+                } else {
+                    document.getElementById("alert-container").innerText =
+                        "No alerts";
+                }
+
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        }
+
+        setInterval(fetchData, 2000);
+
+        const ctx = document.getElementById("sensorChart").getContext("2d");
+
+        const sensorChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: "Temperature (°C)",
+                        borderColor: "rgb(255, 99, 132)",
+                        data: [],
+                        fill: false
+                    },
+                    {
+                        label: "Water Level",
+                        borderColor: "rgb(54, 162, 235)",
+                        data: [],
+                        fill: false
+                    },
+                    {
+                        label: "Turbidity",
+                        borderColor: "rgb(75, 192, 192)",
+                        data: [],
+                        fill: false
+                    },
+                    {
+                        label: "pH",
+                        borderColor: "rgb(153, 102, 255)",
+                        data: [],
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    x: {
+                        type: "time",
+                        time: {
+                            unit: "minute"
+                        },
+                        title: {
+                            display: true,
+                            text: "Time"
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: "Sensor Values"
+                        }
+                    }
+                }
+            }
+        });
+
+        async function updateChart() {
+            try {
+                const response = await fetch("/history");
+                const historyData = await response.json();
+
+                sensorChart.data.labels = [];
+                sensorChart.data.datasets.forEach(dataset => dataset.data = []);
+
+                historyData.forEach(entry => {
+                    sensorChart.data.labels.push(new Date(entry.timestamp));
+                    sensorChart.data.datasets[0].data.push(entry.temperature);
+                    sensorChart.data.datasets[1].data.push(entry.waterLevel);
+                    sensorChart.data.datasets[2].data.push(entry.turbidity);
+                    sensorChart.data.datasets[3].data.push(entry.pH);
+                });
+
+                sensorChart.update();
+
+            } catch (error) {
+                console.error("Error updating chart:", error);
+            }
+        }
+
+        setInterval(updateChart, 10000);
+
+        function downloadCSV() {
+            window.location.href = "/download";
+        }
+
+        updateChart();
+    </script>
+
+</body>
+</html>
