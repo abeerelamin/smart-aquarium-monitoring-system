@@ -1,63 +1,65 @@
 # Smart Aquarium Monitoring System
 
-This project presents an embedded system for automating aquarium monitoring and control.  
-The system monitors water quality parameters and automatically controls actuators to maintain a stable aquatic environment.
+An embedded system project built using the Dragon Plus (MC9S12DG256) microcontroller to automate aquarium monitoring and control.
 
-## Project Context
-- Course: Embedded Systems Lab (CENG329)
-- Type: Team project (3 members)
-- Microcontroller: Dragon Plus Board
+The system monitors:
 
-## My Contribution
-I contributed to:
-- Writing embedded C code for sensor reading and actuator control
-- Python scripts for data logging and analysis
-- HTML-based monitoring interface
-- System testing, calibration, and integration
+- Water Temperature (DS18B20 – Digital)
+- Water Level (Analog)
+- Turbidity (Analog)
+- pH Level (Analog)
 
-## System Features
-- Real-time monitoring of:
-  - Water temperature
-  - pH level
-  - Turbidity
-  - Water level
-- Automatic control of:
-  - Cooling fan (temperature regulation)
-  - Water pump (water level control)
-  - Buzzer alerts for abnormal conditions
-- LCD display for live sensor readings
-- Data transfer and logging using Python
-- Basic web interface for monitoring
+And automatically controls:
 
-## Hardware Components
-- Dragon Plus Trainer Board
-- pH sensor
-- Turbidity sensor
-- Temperature sensor
-- Water level sensor
-- Cooling fan
-- Water pump
-- Active buzzer
-- LCD display
+- Cooling Fan (Temperature regulation)
+- Water Pump (Water level control)
 
-## Software Stack
+Sensor data is transmitted via serial communication to a Python backend for logging and visualization through a web dashboard.
+
+---
+
+## System Architecture
+
+Dragon Plus Board (MC9S12DG256)
+        ↓
+Analog/Digital Sensors
+        ↓
+Embedded C Firmware
+        ↓ (SCI Serial 9600 baud)
+Python Flask Server
+        ↓
+Web Dashboard (HTML + Chart.js)
+
+---
+
+## Technologies Used
+
 - Embedded C (CodeWarrior)
-- Python (data logging and analysis)
-- HTML (monitoring interface)
+- MC9S12DG256 Microcontroller
+- ADC (Analog to Digital Conversion)
+- Serial Communication (SCI)
+- Python (Flask, PySerial, Pandas)
+- HTML + Chart.js
 
-## How the System Works
-1. Sensors send analog/digital signals to the microcontroller.
-2. Sensor data is processed using predefined thresholds.
-3. Actuators are triggered automatically when abnormal conditions are detected.
-4. Sensor readings are displayed locally and logged for further analysis.
-5. Alerts are generated using a buzzer and visual indicators.
+---
 
-## Limitations
-- Designed for small to medium-sized aquariums
-- Limited scalability due to hardware constraints
-- No remote IoT cloud integration
+## How It Works
 
-## Future Improvements
-- IoT-based remote monitoring
-- Mobile-friendly dashboard
-- Predictive maintenance using machine learning
+1. Sensors send data to the microcontroller.
+2. Firmware reads values and checks thresholds.
+3. Fan turns on if temperature > 29°C.
+4. Pump turns on if water level < threshold.
+5. Data is sent via serial.
+6. Python logs data and serves it to a web dashboard.
+
+---
+
+## Running the Project
+
+### 1. Flash the Firmware
+Compile `main.c` using CodeWarrior and upload to the Dragon Plus board.
+
+### 2. Run the Python Server
+```bash
+pip install -r requirements.txt
+python app.py
